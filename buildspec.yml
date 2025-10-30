@@ -1,0 +1,31 @@
+version: 0.2
+
+# AWS CodeBuild specification for building and deploying React app to S3 + CloudFront
+
+phases:
+  pre_build:
+    commands:
+      - echo "Installing dependencies..."
+      - npm ci
+      - echo "Dependencies installed successfully"
+
+  build:
+    commands:
+      - echo "Building React application..."
+      - npm run build
+      - echo "Build completed successfully"
+
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+      - echo "Preparing artifacts for deployment..."
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: 'build'
+  discard-paths: no
+
+cache:
+  paths:
+    - 'node_modules/**/*'
