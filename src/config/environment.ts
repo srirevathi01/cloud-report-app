@@ -32,7 +32,7 @@ export interface Environment {
  */
 export const environment: Environment = {
   // API Configuration
-  apiBaseUrl: 'http://13.127.94.173',
+  apiBaseUrl: 'http://localhost:8000',
   env: 'development',
 
   // AWS Cognito Configuration

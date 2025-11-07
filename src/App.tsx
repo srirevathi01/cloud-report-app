@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Cloud, Database, Network, HardDrive, Shield, DollarSign } from './components/icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Cloud, Database, Network, HardDrive, Shield, DollarSign, BarChart3 } from './components/icons';
 import { AWSAccount, Category, Resource } from './types';
 import { apiService } from './services/api';
 import { storageService } from './utils/storage';
@@ -10,13 +11,19 @@ import TopBar from './components/TopBar';
 import ServiceTabs from './components/ServiceTabs';
 import ResourceTable from './components/ResourceTable';
 import ResourceModal from './components/ResourceModal';
-import CategorySecurityPanel from './components/CategorySecurityPanel';
 import Login from './components/Login';
 import AccountsPage from './components/AccountsPage';
-import CostExplorerDashboard from './components/CostExplorer/CostExplorerDashboard';
 import AlertModal from './components/AlertModal';
+import { CloudDashboard } from './components/Dashboard';
 
 const categories: Category[] = [
+  {
+    id: 'dashboard',
+    name: 'Dashboard',
+    icon: <BarChart3 className="w-5 h-5" />,
+    services: ['overview'],
+    endpoint: '/api/dashboard'
+  },
   {
     id: 'compute',
     name: 'Compute',
@@ -51,7 +58,7 @@ const categories: Category[] = [
     icon: <Shield className="w-5 h-5" />,
     services: ['iam', 'kms', 'waf'],
     endpoint: '/api/security'
-  },
+  }
   // {
   //   id: 'monitoring',
   //   name: 'Monitoring',
@@ -59,13 +66,13 @@ const categories: Category[] = [
   //   services: ['cloudwatch', 'cloudtrail', 'xray'],
   //   endpoint: '/api/monitoring'
   // },
-  {
-    id: 'billing',
-    name: 'Billing',
-    icon: <DollarSign className="w-5 h-5" />,
-    services: ['overview'],
-    endpoint: '/api/billing'
-  }
+  // {
+  //   id: 'billing',
+  //   name: 'Billing',
+  //   icon: <DollarSign className="w-5 h-5" />,
+  //   services: ['overview'],
+  //   endpoint: '/api/billing'
+  // }
 ];
 
 const DEFAULT_REGION = 'us-east-1';
@@ -99,6 +106,7 @@ const DashboardContent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [currentView, setCurrentView] = useState<'dashboard' | 'accounts'>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Show error modal when error occurs
   useEffect(() => {
@@ -119,6 +127,11 @@ const DashboardContent: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated) {
       // Don't make API calls if not authenticated
+      return;
+    }
+
+    // Skip resource fetching for dashboard category (it handles its own data fetching)
+    if (selectedCategory.id === 'dashboard') {
       return;
     }
 
@@ -232,16 +245,6 @@ const DashboardContent: React.FC = () => {
     setSelectedService(category.services[0]);
   };
 
-  const handleNavigateToResourceFromSecurity = (service: string, resourceId: string) => {
-    // Switch to the service
-    setSelectedService(service);
-
-    // Wait for resources to load, then select the resource
-    setTimeout(() => {
-      fetchResourceDetails(resourceId);
-    }, 500);
-  };
-
   const handleAccountsUpdate = (updatedAccounts: AWSAccount[]) => {
     setAwsAccounts(updatedAccounts);
     storageService.saveAccounts(updatedAccounts);
@@ -323,78 +326,263 @@ const DashboardContent: React.FC = () => {
           onRegionChange={handleRegionChange}
         />
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* Mobile Menu Button */}
+          <motion.button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="lg:hidden fixed bottom-4 right-4 z-50 bg-gradient-to-br from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:shadow-3xl transition-all"
+            aria-label="Toggle menu"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <motion.svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              animate={{ rotate: isSidebarOpen ? 90 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {isSidebarOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </motion.svg>
+          </motion.button>
+
+          {/* Overlay for mobile */}
+          <AnimatePresence>
+            {isSidebarOpen && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40 backdrop-blur-sm"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+
           {/* Sidebar */}
-          <div className="w-64 bg-white border-r border-slate-200 shadow-sm overflow-y-auto">
-            <div className="p-4">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          <motion.div
+            className={`
+              fixed lg:static inset-y-0 left-0 z-[45]
+              w-64 backdrop-blur-lg bg-white/98 border-r border-slate-300 shadow-xl overflow-y-auto
+              ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            `}
+            initial={false}
+            animate={{
+              x: isSidebarOpen || window.innerWidth >= 1024 ? 0 : -256,
+            }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            {/* Gradient Background Accent */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-100/30 to-pink-100/30 pointer-events-none"></div>
+
+            <div className="relative z-10 p-4">
+              <motion.h2
+                className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-sm">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                  </svg>
+                </div>
                 Categories
-              </h2>
-              <div className="space-y-1">
-                {categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      handleCategorySelect(category);
-                      setCurrentView('dashboard');
-                    }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                      selectedCategory.id === category.id && currentView === 'dashboard'
-                        ? 'bg-blue-50 text-blue-700 shadow-sm'
-                        : 'text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {category.icon}
-                    <span className="font-medium text-sm">{category.name}</span>
-                  </button>
-                ))}
+              </motion.h2>
+              <div className="space-y-2">
+                {categories.map((category, index) => {
+                  const isActive = selectedCategory.id === category.id && currentView === 'dashboard';
+                  // Define specific gradients for each category
+                  const getGradientColors = (categoryId: string) => {
+                    switch (categoryId) {
+                      case 'networking':
+                        return 'from-blue-500 to-blue-600';
+                      default:
+                        return 'from-blue-400 to-purple-500';
+                    }
+                  };
+                  const gradientClass = getGradientColors(category.id);
+
+                  return (
+                    <motion.button
+                      key={category.id}
+                      onClick={() => {
+                        handleCategorySelect(category);
+                        setCurrentView('dashboard');
+                        setIsSidebarOpen(false);
+                      }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ x: 4, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 overflow-hidden ${
+                        isActive
+                          ? `bg-gradient-to-r ${gradientClass} text-white shadow-lg`
+                          : 'text-slate-700 hover:bg-slate-100 hover:shadow-md font-semibold'
+                      }`}
+                    >
+                      {/* Active indicator gradient */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeCategory"
+                          className={`absolute inset-0 bg-gradient-to-r ${gradientClass}`}
+                          transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+
+                      {/* Icon with gradient background */}
+                      <div className={`relative z-10 p-2 rounded-lg transition-all ${
+                        isActive
+                          ? 'bg-white/25 backdrop-blur-sm'
+                          : 'bg-slate-200 group-hover:bg-blue-100'
+                      }`}>
+                        {React.isValidElement(category.icon) && React.cloneElement(category.icon, {
+                          className: `w-5 h-5 ${isActive ? 'text-white' : 'text-slate-700 group-hover:text-blue-600'}`
+                        } as any)}
+                      </div>
+
+                      <span className={`relative z-10 font-semibold text-sm ${
+                        isActive ? 'text-white' : 'text-slate-700 group-hover:text-slate-800'
+                      }`}>
+                        {category.name}
+                      </span>
+
+                      {/* Hover gradient effect */}
+                      {!isActive && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-purple-100 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                      )}
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Accounts Section */}
-            <div className="p-4 border-t border-slate-200">
-              <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            <div className="relative z-10 p-4 mt-2 border-t border-slate-200">
+              <motion.h2
+                className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-400 to-pink-400 flex items-center justify-center shadow-sm">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
                 Settings
-              </h2>
-              <div className="space-y-1">
-                <button
-                  onClick={() => setCurrentView('accounts')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              </motion.h2>
+              <div className="space-y-2">
+                <motion.button
+                  onClick={() => {
+                    setCurrentView('accounts');
+                    setIsSidebarOpen(false);
+                  }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.25 }}
+                  whileHover={{ x: 4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 overflow-hidden ${
                     currentView === 'accounts'
-                      ? 'bg-blue-50 text-blue-700 shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'bg-gradient-to-r from-indigo-500 to-pink-600 text-white shadow-lg'
+                      : 'text-slate-700 hover:bg-slate-100 hover:shadow-md font-semibold'
                   }`}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                  <span className="font-medium text-sm">Accounts</span>
-                </button>
+                  {/* Active indicator gradient */}
+                  {currentView === 'accounts' && (
+                    <motion.div
+                      layoutId="activeSettings"
+                      className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-pink-600"
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+
+                  {/* Icon with gradient background */}
+                  <div className={`relative z-10 p-2 rounded-lg transition-all ${
+                    currentView === 'accounts'
+                      ? 'bg-white/25 backdrop-blur-sm'
+                      : 'bg-slate-200 group-hover:bg-indigo-100'
+                  }`}>
+                    <svg
+                      className={`w-5 h-5 ${currentView === 'accounts' ? 'text-white' : 'text-slate-700 group-hover:text-indigo-600'}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+
+                  <span className={`relative z-10 font-semibold text-sm ${
+                    currentView === 'accounts' ? 'text-white' : 'text-slate-700 group-hover:text-slate-800'
+                  }`}>
+                    Accounts
+                  </span>
+
+                  {/* Hover gradient effect */}
+                  {currentView !== 'accounts' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-100 to-pink-100 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                  )}
+                </motion.button>
+
+                {/* Add Account Button */}
+                <motion.button
+                  onClick={() => {
+                    setCurrentView('accounts');
+                    setIsSidebarOpen(false);
+                    // Trigger add form after a short delay
+                    setTimeout(() => {
+                      const addButton = document.querySelector('[data-add-account-btn]') as HTMLButtonElement;
+                      if (addButton) addButton.click();
+                    }, 100);
+                  }}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                  whileHover={{ x: 4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="group relative w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 overflow-hidden text-slate-700 hover:bg-green-100 hover:shadow-md border-2 border-dashed border-slate-400 hover:border-green-500"
+                >
+                  {/* Icon with gradient background */}
+                  <div className="relative z-10 p-2 rounded-lg transition-all bg-slate-200 group-hover:bg-green-200">
+                    <svg
+                      className="w-5 h-5 text-slate-700 group-hover:text-green-700"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+
+                  <span className="relative z-10 font-semibold text-sm text-slate-700 group-hover:text-green-800">
+                    Add Account
+                  </span>
+
+                  {/* Hover gradient effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-100 to-emerald-100 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
+                </motion.button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {currentView === 'dashboard' && selectedCategory.id === 'billing' ? (
-              <CostExplorerDashboard
-                accountId={selectedAccount}
-                region={selectedRegion}
+            {currentView === 'dashboard' && selectedCategory.id === 'dashboard' ? (
+              <CloudDashboard
+                selectedRegion={selectedRegion}
               />
             ) : currentView === 'dashboard' ? (
               <>
-                {/* Security Panel */}
-                {selectedAccount && (
-                  <div className="p-4 bg-slate-50 border-b border-slate-200">
-                    <CategorySecurityPanel
-                      category={selectedCategory}
-                      accountId={selectedAccount}
-                      region={selectedRegion}
-                      onNavigateToResource={handleNavigateToResourceFromSecurity}
-                    />
-                  </div>
-                )}
-
                 {/* Service Tabs */}
                 <ServiceTabs
                   services={selectedCategory.services}
@@ -410,6 +598,8 @@ const DashboardContent: React.FC = () => {
                     error={error}
                     onResourceClick={fetchResourceDetails}
                     loadingResourceId={loadingResourceId}
+                    service={selectedService}
+                    categoryName={selectedCategory.name}
                   />
                 </div>
 

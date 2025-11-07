@@ -1,7 +1,7 @@
 import React from 'react';
 import { IconProps } from './types';
 
-export const Settings: React.FC<IconProps> = ({
+export const Edit: React.FC<IconProps> = ({
   className = '',
   size = 24,
   color = 'currentColor',
@@ -18,7 +18,7 @@ export const Settings: React.FC<IconProps> = ({
     strokeLinejoin="round"
     className={className}
   >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M12 1v6m0 6v6m5.66-13l-3 5.2m-5.2 3l-3 5.2M23 12h-6m-6 0H1m18.66 5.66l-5.2-3m-3-5.2l-5.2-3M23 12a11 11 0 1 1-22 0 11 11 0 0 1 22 0z" />
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 );

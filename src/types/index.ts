@@ -229,3 +229,63 @@ export interface CostExplorerData {
   topServices: ServiceCost[];
   filters: CostFilter;
 }
+
+// Dashboard types
+export interface DashboardAccount {
+  accountId: string;
+  accountName: string;
+  onboardedDate: string;
+  projectManager: string;
+  architectName: string;
+}
+
+export interface AccountsOverview {
+  totalAccounts: number;
+  activeAccounts: number;
+  inactiveAccounts: number;
+}
+
+export interface SecurityIssueByAccount {
+  accountName: string;
+  accountId: string;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  total: number;
+}
+
+export interface MonthlyBilling {
+  accountId: string;
+  accountName: string;
+  amount: number;
+  currency: string;
+  month: string;
+  trend?: 'up' | 'down' | 'stable';
+  changePercentage?: number;
+}
+
+export interface PendingUpgrade {
+  id: string;
+  serviceName: string;
+  accountId: string;
+  accountName: string;
+  currentVersion: string;
+  targetVersion: string;
+  upgradeStatus: 'pending' | 'in-progress' | 'scheduled';
+  scheduledDate?: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export interface GlobalHealthStatus {
+  status: 'operational' | 'degraded' | 'outage';
+  affectedRegions: string[];
+  affectedServices: string[];
+  message: string;
+  lastChecked: string;
+}
+
+export interface DashboardFilters {
+  accountIds: string[];
+  architectNames: string[];
+}

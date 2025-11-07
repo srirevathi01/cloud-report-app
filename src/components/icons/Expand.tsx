@@ -1,7 +1,7 @@
 import React from 'react';
 import { IconProps } from './types';
 
-export const RefreshCw: React.FC<IconProps> = ({
+export const Expand: React.FC<IconProps> = ({
   className = '',
   size = 24,
   color = 'currentColor',
@@ -18,8 +18,9 @@ export const RefreshCw: React.FC<IconProps> = ({
     strokeLinejoin="round"
     className={className}
   >
-    <polyline points="23 4 23 10 17 10" />
-    <polyline points="1 20 1 14 7 14" />
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+    <polyline points="15 3 21 3 21 9" />
+    <polyline points="9 21 3 21 3 15" />
+    <line x1="21" y1="3" x2="14" y2="10" />
+    <line x1="3" y1="21" x2="10" y2="14" />
   </svg>
 );

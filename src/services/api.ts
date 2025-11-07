@@ -43,7 +43,7 @@ class ApiService {
     return Date.now() - timestamp < this.CACHE_TTL;
   }
 
-  private async request<T>(
+  async request<T>(
     endpoint: string,
     options?: RequestInit,
     useCache: boolean = true,
@@ -415,6 +415,7 @@ class ApiService {
 
     return [];
   }
+
 
   clearCache(): void {
     this.requestCache.clear();

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Resource } from '../types';
-import { getResourceId, getResourceDisplayName } from '../utils/resourceHelpers';
+import { getResourceId, getResourceDisplayName, getServiceDisplayName, getResourceState, getResourceImportantInfo, shouldShowStatusColumn } from '../utils/resourceHelpers';
 import { ChevronUp, ChevronDown, Search, AlertCircle } from './icons';
 import AlertModal from './AlertModal';
 
@@ -10,6 +11,8 @@ interface ResourceTableProps {
   error: string | null;
   onResourceClick: (resourceId: string) => void;
   loadingResourceId?: string | null;
+  service: string;
+  categoryName: string;
 }
 
 type SortDirection = 'asc' | 'desc';
@@ -19,7 +22,9 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   loading,
   error,
   onResourceClick,
-  loadingResourceId: externalLoadingResourceId
+  loadingResourceId: externalLoadingResourceId,
+  service,
+  categoryName
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -29,6 +34,16 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   const [showErrorModal, setShowErrorModal] = useState(false);
 
   const loadingResourceId = externalLoadingResourceId !== undefined ? externalLoadingResourceId : internalLoadingResourceId;
+
+  // Check if status column should be shown for this service
+  const showStatusColumn = shouldShowStatusColumn(service);
+
+  // Get column headers from first resource
+  const columnHeaders = useMemo(() => {
+    if (resources.length === 0) return [];
+    const firstResourceInfo = getResourceImportantInfo(resources[0], service);
+    return firstResourceInfo.map(info => info.label);
+  }, [resources, service]);
 
   // Filter resources based on search query
   const filteredResources = useMemo(() => {
@@ -148,11 +163,19 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   // Loading state
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading resources...</p>
-        </div>
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/20">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="text-center"
+        >
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-blue-400 border-r-purple-400 absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+          </div>
+          <p className="text-slate-600 font-medium">Loading resources...</p>
+        </motion.div>
       </div>
     );
   }
@@ -163,14 +186,14 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
       <>
         <div className="flex-1 flex items-center justify-center bg-white p-8">
           <div className="text-center max-w-md">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-8 h-8 text-red-600" />
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-400" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Error Loading Resources</h3>
+            <h3 className="text-lg font-medium text-slate-700 mb-2">Error Loading Resources</h3>
             <p className="text-slate-600">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="mt-4 px-6 py-2 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors font-medium"
             >
               Retry
             </button>
@@ -185,13 +208,13 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
             <>
               <button
                 onClick={() => setShowErrorModal(false)}
-                className="px-6 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300 transition-colors"
+                className="px-6 py-2 bg-slate-100 text-slate-600 rounded-lg font-medium hover:bg-slate-200 transition-colors"
               >
                 Dismiss
               </button>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-blue-400 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors"
               >
                 Retry
               </button>
@@ -203,151 +226,261 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-white overflow-hidden">
+    <div className="flex-1 flex flex-col bg-gradient-to-br from-blue-100/40 via-purple-100/30 to-pink-100/30 overflow-hidden">
       {/* Search and Controls */}
-      <div className="p-4 border-b border-slate-200 bg-slate-50">
-        <div className="flex items-center justify-between gap-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="p-3 sm:p-4 border-b border-slate-200 backdrop-blur-lg bg-white/95"
+      >
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Search */}
-          <div className="flex-1 max-w-md relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <div className="flex-1 sm:max-w-md relative group">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-500 group-focus-within:text-blue-600 transition-colors" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search resources..."
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-9 sm:pl-10 pr-4 py-2.5 border border-slate-300 rounded-xl bg-white backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium shadow-md hover:shadow-lg transition-all"
             />
           </div>
 
-          {/* Items per page */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-slate-600">Show:</label>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              className="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
+          {/* Items per page and Results count - Combined on mobile */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+            <div className="flex items-center gap-2 px-3 py-2 bg-white backdrop-blur-sm rounded-xl border border-slate-300 shadow-md">
+              <label className="text-xs sm:text-sm text-slate-700 font-semibold whitespace-nowrap">Show:</label>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                className="border-0 bg-transparent rounded-lg px-1 sm:px-2 py-1 text-xs sm:text-sm font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
 
-          {/* Results count */}
-          <div className="text-sm text-slate-600">
-            Showing {sortedResources.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{' '}
-            {Math.min(currentPage * itemsPerPage, sortedResources.length)} of {sortedResources.length} resources
+            {/* Results count - hide on very small screens */}
+            <div className="text-xs sm:text-sm text-slate-700 font-semibold hidden md:block whitespace-nowrap px-4 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl border border-blue-300 shadow-md">
+              Showing {sortedResources.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{' '}
+              {Math.min(currentPage * itemsPerPage, sortedResources.length)} of {sortedResources.length} resources
+            </div>
+            {/* Compact count for mobile */}
+            <div className="text-xs text-slate-700 font-semibold md:hidden whitespace-nowrap px-3 py-2 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl border border-blue-300 shadow-md">
+              {sortedResources.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}-
+              {Math.min(currentPage * itemsPerPage, sortedResources.length)} of {sortedResources.length}
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-4">
         {paginatedResources.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8 text-slate-400" />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-center justify-center h-full p-4"
+          >
+            <div className="text-center backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-white/20 p-8 sm:p-12 max-w-md">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No Resources Found</h3>
-              <p className="text-slate-600">
+              <h3 className="text-lg sm:text-xl font-medium text-slate-700 mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                No Resources Found
+              </h3>
+              <p className="text-sm sm:text-base text-slate-600 font-medium">
                 {searchQuery ? 'Try adjusting your search query' : 'No resources available for this service'}
               </p>
             </div>
-          </div>
+          </motion.div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
-              <tr>
-                <th className="px-6 py-3 text-left">
-                  <button
-                    onClick={handleSort}
-                    className="flex items-center gap-2 text-xs font-semibold text-slate-700 uppercase tracking-wider hover:text-blue-600 transition-colors"
-                  >
-                    Resource Name
-                    {sortDirection === 'asc' ?
-                      <ChevronUp className="w-4 h-4" /> :
-                      <ChevronDown className="w-4 h-4" />
-                    }
-                  </button>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
+          <div className="overflow-x-auto">
+            <div className="backdrop-blur-lg bg-white/95 rounded-2xl shadow-xl border border-slate-300 overflow-hidden">
+              <table className="w-full min-w-[640px]">
+                <thead className="bg-gradient-to-r from-blue-100 to-purple-100 border-b border-slate-300 sticky top-0">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">
+                      <button
+                        onClick={handleSort}
+                        className="flex items-center gap-1 sm:gap-2 text-xs font-medium text-slate-600 uppercase tracking-wider hover:text-blue-500 transition-colors group"
+                      >
+                        <span className="hidden sm:inline">Resource Name</span>
+                        <span className="sm:hidden">Name</span>
+                        <div className="p-1 rounded-lg bg-white/50 group-hover:bg-blue-50 transition-colors">
+                          {sortDirection === 'asc' ?
+                            <ChevronUp className="w-3 h-3 sm:w-4 sm:h-4" /> :
+                            <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
+                          }
+                        </div>
+                      </button>
+                    </th>
+                    {showStatusColumn && (
+                      <th className="px-3 sm:px-6 py-3 sm:py-4 text-left">
+                        <div className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                          Status
+                        </div>
+                      </th>
+                    )}
+                    {columnHeaders.map((header, idx) => (
+                      <th key={idx} className="px-3 sm:px-6 py-3 sm:py-4 text-left">
+                        <div className="text-xs font-medium text-slate-600 uppercase tracking-wider">
+                          {header}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/50">
               {paginatedResources.map((resource, index) => {
                 const resourceId = getResourceId(resource) || '';
                 const displayName = getResourceDisplayName(resource);
                 const isLoadingThisResource = loadingResourceId === resourceId;
+                const resourceState = getResourceState(resource);
+                const importantInfo = getResourceImportantInfo(resource, service);
+
+                // Determine status color
+                const getStateColor = (state: string | null): string => {
+                  if (!state) return '';
+                  const stateLower = state.toLowerCase();
+                  if (stateLower.includes('running') || stateLower.includes('available') || stateLower.includes('active')) {
+                    return 'text-green-700 bg-green-50';
+                  }
+                  if (stateLower.includes('stopped') || stateLower.includes('terminated')) {
+                    return 'text-red-700 bg-red-50';
+                  }
+                  if (stateLower.includes('pending') || stateLower.includes('stopping') || stateLower.includes('starting')) {
+                    return 'text-yellow-700 bg-yellow-50';
+                  }
+                  return 'text-slate-700 bg-slate-50';
+                };
 
                 return (
-                  <tr
+                  <motion.tr
                     key={resourceId || index}
-                    className={`transition-colors cursor-pointer ${isLoadingThisResource ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03, duration: 0.2 }}
+                    className={`group transition-all cursor-pointer ${
+                      isLoadingThisResource
+                        ? 'bg-gradient-to-r from-blue-100 to-purple-100'
+                        : 'hover:bg-gradient-to-r hover:from-blue-100/60 hover:to-purple-100/60 hover:shadow-md'
+                    }`}
                     onClick={() => handleResourceClick(resourceId)}
+                    whileHover={{ scale: 1.005 }}
                   >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         {isLoadingThisResource && (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                          <div className="relative">
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-300"></div>
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-t-blue-600 border-r-purple-600 absolute top-0 left-0"></div>
+                          </div>
                         )}
-                        <div>
-                          <div className="font-medium text-slate-900">{displayName}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-slate-800 text-sm sm:text-base truncate group-hover:text-blue-600 transition-colors">
+                            {displayName}
+                          </div>
                           {resourceId && resourceId !== displayName && (
-                            <div className="text-sm text-slate-500">{resourceId}</div>
+                            <div className="text-xs sm:text-sm text-slate-600 truncate font-mono bg-slate-100 px-2 py-0.5 rounded mt-1 inline-block border border-slate-300">
+                              {resourceId}
+                            </div>
                           )}
                         </div>
                       </div>
                     </td>
-                  </tr>
+                    {showStatusColumn && (
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        {resourceState ? (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-md ${getStateColor(resourceState)}`}>
+                            <span className={`w-2 h-2 rounded-full mr-2 ${
+                              resourceState.toLowerCase().includes('running') || resourceState.toLowerCase().includes('available') || resourceState.toLowerCase().includes('active')
+                                ? 'bg-green-500 animate-pulse'
+                                : resourceState.toLowerCase().includes('stopped') || resourceState.toLowerCase().includes('terminated')
+                                ? 'bg-red-500'
+                                : 'bg-yellow-500 animate-pulse'
+                            }`}></span>
+                            {resourceState}
+                          </span>
+                        ) : (
+                          <span className="text-xs sm:text-sm text-slate-400">-</span>
+                        )}
+                      </td>
+                    )}
+                    {importantInfo.map((info, idx) => (
+                      <td key={idx} className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="text-xs sm:text-sm text-slate-600 font-medium truncate max-w-[200px]">
+                          {info.value}
+                        </div>
+                      </td>
+                    ))}
+                  </motion.tr>
                 );
               })}
-            </tbody>
-          </table>
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </div>
 
       {/* Pagination */}
       {paginatedResources.length > 0 && totalPages > 1 && (
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
-          <div className="flex items-center justify-between">
-            <button
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-3 sm:p-4 border-t border-slate-100 backdrop-blur-lg bg-white/90"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <motion.button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 sm:px-6 py-2 sm:py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-600 bg-white/80 backdrop-blur-sm hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-purple-50/60 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
             >
-              Previous
-            </button>
+              <span className="hidden sm:inline">Previous</span>
+              <span className="sm:hidden">Prev</span>
+            </motion.button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {getPageNumbers().map((page, index) => (
                 page === '...' ? (
-                  <span key={`ellipsis-${index}`} className="px-2 text-slate-500">...</span>
+                  <span key={`ellipsis-${index}`} className="px-1 sm:px-2 text-slate-500 text-xs sm:text-sm font-medium">...</span>
                 ) : (
-                  <button
+                  <motion.button
                     key={page}
                     onClick={() => handlePageChange(page as number)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shadow-sm ${
                       currentPage === page
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-700 hover:bg-white border border-slate-300'
+                        ? 'bg-gradient-to-r from-blue-400 to-purple-500 text-white shadow-md scale-110'
+                        : 'text-slate-600 bg-white/80 backdrop-blur-sm hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-purple-50/60 border border-slate-200 hover:border-blue-300 hover:shadow-md'
                     }`}
                   >
                     {page}
-                  </button>
+                  </motion.button>
                 )
               ))}
             </div>
 
-            <button
+            <motion.button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-4 sm:px-6 py-2 sm:py-2.5 border border-slate-200 rounded-xl text-xs sm:text-sm font-medium text-slate-600 bg-white/80 backdrop-blur-sm hover:bg-gradient-to-r hover:from-blue-50/60 hover:to-purple-50/60 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
             >
               Next
-            </button>
+            </motion.button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );
