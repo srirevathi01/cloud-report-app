@@ -24,13 +24,6 @@ phases:
           --distribution-id $DISTRIBUTION_ID \
           --paths "/*"
 
-
-artifacts:
-  files:
-    - '**/*'
-  base-directory: 'build'
-  discard-paths: no
-
 cache:
   paths:
     - 'node_modules/**/*'
