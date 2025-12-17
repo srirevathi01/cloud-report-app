@@ -163,18 +163,21 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   // Loading state
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-pink-50/20">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-slate-900 h-full">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="text-center"
+          transition={{ duration: 0.4 }}
+          className="text-center backdrop-blur-lg bg-white/80 dark:bg-slate-800/80 rounded-3xl shadow-xl border border-white/20 dark:border-slate-700/50 p-12"
         >
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 mx-auto mb-4"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-t-blue-400 border-r-purple-400 absolute top-0 left-1/2 transform -translate-x-1/2"></div>
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-300 dark:border-blue-700 mx-auto"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-t-blue-600 border-r-purple-600 absolute top-0 left-1/2 transform -translate-x-1/2"></div>
           </div>
-          <p className="text-slate-600 font-medium">Loading resources...</p>
+          <h3 className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            Loading Resources
+          </h3>
+          <p className="text-slate-600 dark:text-slate-300 font-medium text-sm">Please wait while we fetch your data...</p>
         </motion.div>
       </div>
     );
@@ -226,13 +229,13 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gradient-to-br from-blue-100/40 via-purple-100/30 to-pink-100/30 overflow-hidden">
+    <div className="flex-1 flex flex-col bg-white dark:bg-slate-900 overflow-hidden">
       {/* Search and Controls */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="p-3 sm:p-4 border-b border-slate-200 backdrop-blur-lg bg-white/95"
+        className="p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700 backdrop-blur-lg bg-white/95 dark:bg-slate-800/95"
       >
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           {/* Search */}
@@ -278,27 +281,27 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
       </motion.div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto p-4">
-        {paginatedResources.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="flex items-center justify-center h-full p-4"
-          >
-            <div className="text-center backdrop-blur-lg bg-white/70 rounded-3xl shadow-lg border border-white/20 p-8 sm:p-12 max-w-md">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-medium text-slate-700 mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                No Resources Found
-              </h3>
-              <p className="text-sm sm:text-base text-slate-600 font-medium">
-                {searchQuery ? 'Try adjusting your search query' : 'No resources available for this service'}
-              </p>
+      {paginatedResources.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex-1 flex items-center justify-center p-4"
+        >
+          <div className="text-center backdrop-blur-lg bg-white/80 rounded-3xl shadow-xl border border-white/20 p-8 sm:p-12 max-w-md">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+              <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" />
             </div>
-          </motion.div>
-        ) : (
+            <h3 className="text-lg sm:text-xl font-medium text-slate-700 mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              No Resources Found
+            </h3>
+            <p className="text-sm sm:text-base text-slate-600 font-medium">
+              {searchQuery ? 'Try adjusting your search query' : 'No resources available for this service'}
+            </p>
+          </div>
+        </motion.div>
+      ) : (
+        <div className="flex-1 overflow-auto p-4">
           <div className="overflow-x-auto">
             <div className="backdrop-blur-lg bg-white/95 rounded-2xl shadow-xl border border-slate-300 overflow-hidden">
               <table className="w-full min-w-[640px]">
@@ -425,8 +428,8 @@ const ResourceTable: React.FC<ResourceTableProps> = ({
               </table>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Pagination */}
       {paginatedResources.length > 0 && totalPages > 1 && (

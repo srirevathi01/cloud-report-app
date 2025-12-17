@@ -289,3 +289,27 @@ export interface DashboardFilters {
   accountIds: string[];
   architectNames: string[];
 }
+
+// Security Hub Report types
+export interface SecurityControl {
+  control: string;
+  name: string;
+  status: 'PASSED' | 'FAILED';
+  failed_count: number;
+  failed_resources: any[];
+}
+
+export interface SecurityReportSummary {
+  total: number;
+  passed: number;
+  failed: number;
+  errors: number;
+}
+
+export interface SecurityReport {
+  account_id: string;
+  region: string;
+  timestamp: string;
+  summary: SecurityReportSummary;
+  results: SecurityControl[];
+}

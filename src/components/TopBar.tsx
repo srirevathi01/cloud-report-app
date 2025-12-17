@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Cloud } from './icons';
+import { Cloud, Moon, Sun } from './icons';
 import { AWSAccount } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 interface TopBarProps {
   awsAccounts: AWSAccount[];
@@ -22,6 +23,7 @@ const TopBar: React.FC<TopBarProps> = ({
   onRegionChange
 }) => {
   const { user, signOut } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   const handleSignOut = async () => {
     try {
@@ -36,7 +38,7 @@ const TopBar: React.FC<TopBarProps> = ({
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="backdrop-blur-lg bg-white/95 border-b border-slate-200 shadow-md sticky top-0 z-50"
+      className="backdrop-blur-lg bg-white/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-700 shadow-md sticky top-0 z-50"
     >
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 sm:px-6 py-3 sm:py-4 gap-3 sm:gap-4">
         {/* Logo and Title */}
@@ -123,22 +125,40 @@ const TopBar: React.FC<TopBarProps> = ({
             </div>
           </div>
 
-          {/* User Info and Sign Out */}
+          {/* Dark Mode Toggle, User Info and Sign Out */}
           <div className="flex items-center justify-between sm:justify-start gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-xl flex-1 sm:flex-none border border-slate-300 shadow-md min-w-0">
+            {/* Dark Mode Toggle */}
+            <motion.button
+              onClick={toggleDarkMode}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2.5 bg-slate-100 dark:bg-slate-700 rounded-xl border border-slate-300 dark:border-slate-600 shadow-md hover:shadow-lg transition-all flex-shrink-0 h-[42px] w-[42px] flex items-center justify-center"
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDarkMode ? (
+                <Sun className="w-5 h-5 text-yellow-500" />
+              ) : (
+                <Moon className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+              )}
+            </motion.button>
+
+            {/* User Info */}
+            <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-xl border border-slate-300 dark:border-slate-600 shadow-md min-w-0 h-[42px]">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
               <div className="text-left min-w-0 flex-1">
-                <div className="text-xs font-semibold text-slate-700 leading-tight truncate">{user?.username || 'User'}</div>
-                {user?.email && <div className="text-[10px] text-slate-500 hidden md:block leading-tight truncate">{user.email}</div>}
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate">{user?.username || 'User'}</div>
+                {user?.email && <div className="text-[10px] text-slate-500 dark:text-slate-400 hidden md:block leading-tight truncate">{user.email}</div>}
               </div>
             </div>
+
+            {/* Sign Out Button */}
             <button
               onClick={handleSignOut}
-              className="group px-4 py-2.5 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white rounded-xl text-xs font-semibold transition-all whitespace-nowrap shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0"
+              className="group px-4 py-2.5 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white rounded-xl text-xs font-semibold transition-all whitespace-nowrap shadow-md hover:shadow-lg transform hover:scale-105 active:scale-95 flex-shrink-0 h-[42px] flex items-center"
               title="Sign out"
             >
               <span className="flex items-center gap-2">

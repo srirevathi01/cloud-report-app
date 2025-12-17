@@ -23,3 +23,5 @@ export { Expand } from './Expand';
 export { TrendingUp } from './TrendingUp';
 export { BarChart3 } from './BarChart3';
 export { Users } from './Users';
+export { Moon } from './Moon';
+export { Sun } from './Sun';

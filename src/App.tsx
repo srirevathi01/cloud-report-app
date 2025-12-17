@@ -6,6 +6,7 @@ import { apiService } from './services/api';
 import { storageService } from './utils/storage';
 import { logger } from './utils/logger';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { DarkModeProvider } from './contexts/DarkModeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import TopBar from './components/TopBar';
 import ServiceTabs from './components/ServiceTabs';
@@ -316,7 +317,7 @@ const DashboardContent: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
+      <div className="h-screen bg-white dark:bg-slate-900 flex flex-col">
         <TopBar
           awsAccounts={awsAccounts}
           selectedAccount={selectedAccount}
@@ -326,7 +327,7 @@ const DashboardContent: React.FC = () => {
           onRegionChange={handleRegionChange}
         />
 
-        <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex flex-1 overflow-hidden relative h-full">
           {/* Mobile Menu Button */}
           <motion.button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -369,7 +370,7 @@ const DashboardContent: React.FC = () => {
           <motion.div
             className={`
               fixed lg:static inset-y-0 left-0 z-[45]
-              w-64 backdrop-blur-lg bg-white/98 border-r border-slate-300 shadow-xl overflow-y-auto
+              w-64 bg-white dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 shadow-xl overflow-y-auto
               ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
             `}
             initial={false}
@@ -378,12 +379,9 @@ const DashboardContent: React.FC = () => {
             }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            {/* Gradient Background Accent */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-100/40 via-purple-100/30 to-pink-100/30 pointer-events-none"></div>
-
-            <div className="relative z-10 p-4">
+            <div className="p-4">
               <motion.h2
-                className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"
+                className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -425,7 +423,7 @@ const DashboardContent: React.FC = () => {
                       className={`group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 overflow-hidden ${
                         isActive
                           ? `bg-gradient-to-r ${gradientClass} text-white shadow-lg`
-                          : 'text-slate-700 hover:bg-slate-100 hover:shadow-md font-semibold'
+                          : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 hover:shadow-md font-semibold'
                       }`}
                     >
                       {/* Active indicator gradient */}
@@ -441,15 +439,15 @@ const DashboardContent: React.FC = () => {
                       <div className={`relative z-10 p-2 rounded-lg transition-all ${
                         isActive
                           ? 'bg-white/25 backdrop-blur-sm'
-                          : 'bg-slate-200 group-hover:bg-blue-100'
+                          : 'bg-slate-200 dark:bg-slate-700 group-hover:bg-blue-100 dark:group-hover:bg-blue-900'
                       }`}>
                         {React.isValidElement(category.icon) && React.cloneElement(category.icon, {
-                          className: `w-5 h-5 ${isActive ? 'text-white' : 'text-slate-700 group-hover:text-blue-600'}`
+                          className: `w-5 h-5 ${isActive ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400'}`
                         } as any)}
                       </div>
 
                       <span className={`relative z-10 font-semibold text-sm ${
-                        isActive ? 'text-white' : 'text-slate-700 group-hover:text-slate-800'
+                        isActive ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-800 dark:group-hover:text-slate-100'
                       }`}>
                         {category.name}
                       </span>
@@ -465,9 +463,9 @@ const DashboardContent: React.FC = () => {
             </div>
 
             {/* Accounts Section */}
-            <div className="relative z-10 p-4 mt-2 border-t border-slate-200">
+            <div className="relative z-10 p-4 mt-2 border-t border-slate-200 dark:border-slate-700">
               <motion.h2
-                className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"
+                className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2"
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
@@ -576,11 +574,13 @@ const DashboardContent: React.FC = () => {
           </motion.div>
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden h-full">
             {currentView === 'dashboard' && selectedCategory.id === 'dashboard' ? (
-              <CloudDashboard
-                selectedRegion={selectedRegion}
-              />
+              <div className="flex-1 overflow-y-auto h-full">
+                <CloudDashboard
+                  selectedRegion={selectedRegion}
+                />
+              </div>
             ) : currentView === 'dashboard' ? (
               <>
                 {/* Service Tabs */}
@@ -591,7 +591,7 @@ const DashboardContent: React.FC = () => {
                 />
 
                 {/* Resources View - Full Screen Table */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden h-full">
                   <ResourceTable
                     resources={resources}
                     loading={loading}
@@ -665,9 +665,11 @@ const DashboardContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <DashboardContent />
-      </AuthProvider>
+      <DarkModeProvider>
+        <AuthProvider>
+          <DashboardContent />
+        </AuthProvider>
+      </DarkModeProvider>
     </ErrorBoundary>
   );
 };

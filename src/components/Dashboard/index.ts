@@ -4,3 +4,5 @@ export { default as BillingChart } from './BillingChart';
 export { default as PendingUpgrades } from './PendingUpgrades';
 export { default as DashboardAccountsTable } from './DashboardAccountsTable';
 export { default as ExpandableChartModal } from './ExpandableChartModal';
+export { default as SecurityScore } from './SecurityScore';
+export { default as SecurityIssues } from './SecurityIssues';

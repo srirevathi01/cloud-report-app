@@ -5,11 +5,14 @@ import GlobalHealthDashboard from './GlobalHealthDashboard';
 import BillingChart from './BillingChart';
 import PendingUpgrades from './PendingUpgrades';
 import DashboardAccountsTable from './DashboardAccountsTable';
+import SecurityScore from './SecurityScore';
+import SecurityIssues from './SecurityIssues';
 import {
   AccountsOverview,
   MonthlyBilling,
   PendingUpgrade,
-  DashboardAccount
+  DashboardAccount,
+  SecurityReport
 } from '../../types';
 import { apiService } from '../../services/api';
 import { logger } from '../../utils/logger';
@@ -28,6 +31,7 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
   const [billingData, setBillingData] = useState<MonthlyBilling[]>([]);
   const [pendingUpgrades, setPendingUpgrades] = useState<PendingUpgrade[]>([]);
   const [accounts, setAccounts] = useState<DashboardAccount[]>([]);
+  const [securityReport, setSecurityReport] = useState<SecurityReport | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -41,18 +45,21 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
         accountsData,
         billingDataRes,
         upgradesData,
-        accountsTableData
+        accountsTableData,
+        securityData
       ] = await Promise.all([
         fetchAccountsOverview(),
         fetchBillingData(),
         fetchPendingUpgrades(),
-        fetchAccounts()
+        fetchAccounts(),
+        fetchSecurityReport()
       ]);
 
       setAccountsOverview(accountsData);
       setBillingData(billingDataRes);
       setPendingUpgrades(upgradesData);
       setAccounts(accountsTableData);
+      setSecurityReport(securityData);
     } catch (error) {
       logger.error('Error fetching dashboard data:', error);
     } finally {
@@ -103,6 +110,19 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
     }
   };
 
+  const fetchSecurityReport = async (): Promise<SecurityReport | null> => {
+    try {
+      const response = await apiService.request<SecurityReport>('/api/dashboard/security-report', {}, true);
+      if (response.data && typeof response.data === 'object' && 'summary' in response.data) {
+        return response.data;
+      }
+      return null;
+    } catch (error) {
+      logger.error('Error fetching security report:', error);
+      return null;
+    }
+  };
+
   const handleEditAccount = (account: DashboardAccount) => {
     // Implement edit functionality
     logger.log('Edit account:', account);
@@ -125,8 +145,8 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8">
-      <div className="max-w-[1600px] mx-auto space-y-8">
+    <div className="min-h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-8">
+      <div className="max-w-[1600px] mx-auto space-y-8 pb-8">
         {/* Quick Stats Row */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -134,11 +154,11 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
-          <div className="backdrop-blur-lg bg-white/80 rounded-2xl shadow-lg border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div className="backdrop-blur-lg bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Total Accounts</p>
-                <p className="text-4xl font-bold text-slate-900 mt-2">{accountsOverview.totalAccounts}</p>
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Accounts</p>
+                <p className="text-4xl font-bold text-slate-900 dark:text-white mt-2">{accountsOverview.totalAccounts}</p>
               </div>
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,11 +168,11 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
             </div>
           </div>
 
-          <div className="backdrop-blur-lg bg-white/80 rounded-2xl shadow-lg border border-white/20 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div className="backdrop-blur-lg bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/50 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Active Accounts</p>
-                <p className="text-4xl font-bold text-green-600 mt-2">{accountsOverview.activeAccounts}</p>
+                <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Active Accounts</p>
+                <p className="text-4xl font-bold text-green-600 dark:text-green-400 mt-2">{accountsOverview.activeAccounts}</p>
               </div>
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-lg">
                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,11 +195,26 @@ const CloudDashboard: React.FC<CloudDashboardProps> = ({ selectedRegion }) => {
           <BillingChart data={billingData} loading={loading} />
         </motion.div>
 
+        {/* Security Row - Security Score and Issues */}
+        {securityReport && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            <SecurityScore summary={securityReport.summary} loading={loading} />
+            <div className="lg:col-span-2">
+              <SecurityIssues controls={securityReport.results} loading={loading} />
+            </div>
+          </motion.div>
+        )}
+
         {/* Middle Row - Pending Upgrades (Full Width) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
         >
           <PendingUpgrades data={pendingUpgrades} loading={loading} />
         </motion.div>
