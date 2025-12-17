@@ -17,8 +17,13 @@ phases:
 
   post_build:
     commands:
-      - echo "Build completed on `date`"
-      - echo "Preparing artifacts for deployment..."
+      - echo "Deploying build to S3..."
+      - aws s3 sync build/ s3://pipelinecloud-s3-deployment --delete
+      - echo "Invalidating CloudFront cache..."
+      - aws cloudfront create-invalidation \
+          --distribution-id $DISTRIBUTION_ID \
+          --paths "/*"
+
 
 artifacts:
   files:
