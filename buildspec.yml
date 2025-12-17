@@ -1,29 +1,25 @@
 version: 0.2
 
-# AWS CodeBuild specification for building and deploying React app to S3 + CloudFront
-
 phases:
-  pre_build:
+  install:
     commands:
-      - echo "Installing dependencies..."
+      - echo "Installing dependencies"
       - npm ci
-      - echo "Dependencies installed successfully"
 
   build:
     commands:
-      - echo "Building React application..."
+      - echo "Building React app"
       - npm run build
-      - echo "Build completed successfully"
 
   post_build:
     commands:
-      - echo "Deploying build to S3..."
+      - echo "Deploying to S3"
       - aws s3 sync build/ s3://pipelinecloud-s3-deployment --delete
-      - echo "Invalidating CloudFront cache..."
+      - echo "Invalidating CloudFront cache"
       - aws cloudfront create-invalidation \
           --distribution-id $DISTRIBUTION_ID \
           --paths "/*"
 
 cache:
   paths:
-    - 'node_modules/**/*'
+    - node_modules/**/*
