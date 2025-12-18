@@ -3,19 +3,15 @@ version: 0.2
 phases:
   install:
     commands:
-      - echo "Installing dependencies"
       - npm ci
 
   build:
     commands:
-      - echo "Building React app"
       - npm run build
 
   post_build:
     commands:
-      - echo "Deploying to S3"
       - aws s3 sync build/ s3://pipelinecloud-s3-deployment --delete
-      - echo "Invalidating CloudFront cache"
       - aws cloudfront create-invalidation \
           --distribution-id $DISTRIBUTION_ID \
           --paths "/*"
@@ -23,3 +19,4 @@ phases:
 cache:
   paths:
     - node_modules/**/*
+
