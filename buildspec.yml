@@ -16,9 +16,7 @@ phases:
       - echo "Deploying to S3..."
       - aws s3 sync build/ s3://$BUCKET_NAME
       - echo "Invalidating CloudFront cache..."
-      - aws cloudfront create-invalidation \
-          --distribution-id $DISTRIBUTION_ID \
-          --paths "/*"
+      - aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
 
 artifacts:
   files:
