@@ -1,23 +1,148 @@
-version: 0.2
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ECS Cluster with Auto Scaling EC2, Capacity Provider, and Task Definition for Cloud Report App (UserData fixed)
 
-phases:
-  install:
-    commands:
-      - echo "Installing dependencies"
-      - npm ci
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-06f5f1f1458009567
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-01d08fac7ba9f642b
+  SecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: sg-0553316c0b0ce2b9f
 
-  build:
-    commands:
-      - echo "Building React app"
-      - npm run build
+Resources:
 
-  post_build:
-    commands:
-      - echo "Deploying to S3"
-      - aws s3 sync build/ s3://pipelinecloud-s3-deployment --delete
-      - echo "Invalidating CloudFront cache"
-      - aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: cloud-report-app-2
 
-cache:
-  paths:
-    - node_modules/**/*
+  ECSInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ECSInstanceRole-2
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+
+  ECSInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref ECSInstanceRole
+      InstanceProfileName: ECSInstanceProfile-2
+
+  ECSLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: cloud-report-app-lt
+      LaunchTemplateData:
+        IamInstanceProfile:
+          Name: !Ref ECSInstanceProfile
+        ImageId: ami-0be945a0ff2c9ad6b # ECS-Optimized Amazon Linux 2 in ap-south-1
+        InstanceType: t3.micro
+        SecurityGroupIds:
+          - !Ref SecurityGroupId
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            echo "ECS_CLUSTER=cloud-report-app-2" >> /etc/ecs/ecs.config
+            systemctl restart ecs
+
+  ECSAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - Ref: SubnetId
+      LaunchTemplate:
+        LaunchTemplateId: !Ref ECSLaunchTemplate
+        Version: !GetAtt ECSLaunchTemplate.LatestVersionNumber
+      MinSize: 0
+      MaxSize: 2
+      DesiredCapacity: 0
+      Tags:
+        - Key: Name
+          Value: cloud-report-app-ec2
+          PropagateAtLaunch: true
+
+  ECSCapacityProvider:
+    Type: AWS::ECS::CapacityProvider
+    Properties:
+      Name: cloud-report-app-capacity-provider-2
+      AutoScalingGroupProvider:
+        AutoScalingGroupArn: !Ref ECSAutoScalingGroup
+        ManagedScaling:
+          Status: ENABLED
+          TargetCapacity: 100
+        ManagedTerminationProtection: DISABLED
+
+  ECSClusterCapacityProviderAssociation:
+    Type: AWS::ECS::ClusterCapacityProviderAssociations
+    Properties:
+      Cluster: !Ref ECSCluster
+      CapacityProviders:
+        - !Ref ECSCapacityProvider
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: !Ref ECSCapacityProvider
+          Weight: 1
+
+  CloudReportTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: cloudreport-api
+      Cpu: "1024"
+      Memory: "952"
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      ExecutionRoleArn: arn:aws:iam::047471737790:role/ecsTaskExecutionRole
+      ContainerDefinitions:
+        - Name: fast-api
+          Image: 047471737790.dkr.ecr.ap-south-1.amazonaws.com/cloudreport-api:46f9576
+          Essential: true
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+            Interval: 30
+            Retries: 3
+            StartPeriod: 10
+            Timeout: 5
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/cloud-report-api
+              awslogs-region: ap-south-1
+              awslogs-stream-prefix: ecs
+          PortMappings:
+            - ContainerPort: 8000
+              HostPort: 80
+              Protocol: tcp
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      ServiceName: cloud-report-api-service-2
+      DesiredCount: 0
+      TaskDefinition: !Ref CloudReportTaskDefinition
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+      CapacityProviderStrategy:
+        - CapacityProvider: !Ref ECSCapacityProvider
+          Weight: 1
+
+here, i want a change like
+use the latest task definition, dont create newly every time
+account id and ecr repo shouldn't be static
