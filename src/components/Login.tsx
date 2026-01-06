@@ -10,11 +10,12 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
 
   const handleSAMLLogin = () => {
-    if (!validateCognitoConfig()) {
-      setError('Cognito configuration is incomplete. Please check environment variables.');
-      return;
-    }
-    signInWithSAML();
+    // if (!validateCognitoConfig()) {
+    //   setError('Cognito configuration is incomplete. Please check environment variables.');
+    //   return;
+    // }
+    // signInWithSAML();
+    return true;
   };
 
   return (
