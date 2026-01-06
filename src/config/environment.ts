@@ -38,9 +38,9 @@ export const environment: Environment = {
   // AWS Cognito Configuration
   cognito: {
     region: 'us-east-1',
-    userPoolId: 'us-east-1_oATLPBxAZ',
-    clientId: '4v8fnuvgfqqefe67pq4hjtaalm',
-    domain: 'us-east-1oatlpbxaz.auth.us-east-1.amazoncognito.com',
+    userPoolId: 'us-east-1_Qe5yZvwHa',
+    clientId: '6jsu25e6vn6di2770j5gc2q57n',
+    domain: 'us-east-1qe5yzvwha.auth.us-east-1.amazoncognito.com',
     redirectSignIn: 'http://cloud-report-alb-357980303.us-east-1.elb.amazonaws.com',
     redirectSignOut: 'http://cloud-report-alb-357980303.us-east-1.elb.amazonaws.com',
     identityProvider: 'IAMSAML',
