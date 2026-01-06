@@ -91,27 +91,27 @@ class AuthService {
    * Redirect to Cognito Hosted UI for SAML authentication
    */
   signInWithSAML(): void {
-    const { domain, redirectSignIn, scope, responseType } = cognitoConfig.oauth;
+    // const { domain, redirectSignIn, scope, responseType } = cognitoConfig.oauth;
 
     // Generate PKCE challenge
-    const codeVerifier = this.generateCodeVerifier();
-    sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+    // const codeVerifier = this.generateCodeVerifier();
+    // sessionStorage.setItem('pkce_code_verifier', codeVerifier);
 
-    this.generateCodeChallenge(codeVerifier).then(codeChallenge => {
-      const params = new URLSearchParams({
-        client_id: cognitoConfig.userPoolWebClientId,
-        response_type: responseType,
-        scope: scope.join(' '),
-        redirect_uri: redirectSignIn,
-        identity_provider: cognitoConfig.identityProvider,
-        code_challenge: codeChallenge,
-        code_challenge_method: 'S256',
-      });
+    // this.generateCodeChallenge(codeVerifier).then(codeChallenge => {
+    //   const params = new URLSearchParams({
+    //     client_id: cognitoConfig.userPoolWebClientId,
+    //     response_type: responseType,
+    //     scope: scope.join(' '),
+    //     redirect_uri: redirectSignIn,
+    //     identity_provider: cognitoConfig.identityProvider,
+    //     code_challenge: codeChallenge,
+    //     code_challenge_method: 'S256',
+    //   });
 
-      const authUrl = `https://${domain}/oauth2/authorize?${params.toString()}`;
-      logger.info('Redirecting to SAML authentication');
-      window.location.href = authUrl;
-    });
+    //   const authUrl = `https://${domain}/oauth2/authorize?${params.toString()}`;
+    //   logger.info('Redirecting to SAML authentication');
+    //   window.location.href = authUrl;
+    // });
   }
 
   /**
