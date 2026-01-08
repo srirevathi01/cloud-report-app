@@ -5,14 +5,14 @@ import { AWSAccount, Category, Resource } from './types';
 import { apiService } from './services/api';
 import { storageService } from './utils/storage';
 import { logger } from './utils/logger';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { DarkModeProvider } from './contexts/DarkModeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import TopBar from './components/TopBar';
 import ServiceTabs from './components/ServiceTabs';
 import ResourceTable from './components/ResourceTable';
 import ResourceModal from './components/ResourceModal';
-import Login from './components/Login';
+// import Login from './components/Login';
 import AccountsPage from './components/AccountsPage';
 import AlertModal from './components/AlertModal';
 import { CloudDashboard } from './components/Dashboard';
@@ -79,7 +79,7 @@ const categories: Category[] = [
 const DEFAULT_REGION = 'us-east-1';
 
 const DashboardContent: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  // const { isAuthenticated, isLoading: authLoading } = useAuth();
   // Initialize accounts from localStorage
   const initializeAccounts = (): AWSAccount[] => {
     const stored = storageService.getAccounts();
@@ -118,32 +118,45 @@ const DashboardContent: React.FC = () => {
 
   // Fetch regions when account changes (only if authenticated)
   useEffect(() => {
-    if (isAuthenticated && selectedAccount) {
+    if (selectedAccount) {
       fetchRegions();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAccount, isAuthenticated]);
+  }, [selectedAccount]);
 
   // Fetch resources when category, service, account, or region changes (only if authenticated)
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     // Don't make API calls if not authenticated
+  //     return;
+  //   }
+
+  //   // Skip resource fetching for dashboard category (it handles its own data fetching)
+  //   if (selectedCategory.id === 'dashboard') {
+  //     return;
+  //   }
+
+  //   if (selectedAccount) {
+  //     fetchResources();
+  //   } else {
+  //     setResources([]);
+  //     setError('Please add an AWS account to get started');
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [selectedCategory, selectedService, selectedAccount, selectedRegion, isAuthenticated]);
   useEffect(() => {
-    if (!isAuthenticated) {
-      // Don't make API calls if not authenticated
-      return;
-    }
+  if (selectedCategory.id === 'dashboard') {
+    return;
+  }
 
-    // Skip resource fetching for dashboard category (it handles its own data fetching)
-    if (selectedCategory.id === 'dashboard') {
-      return;
-    }
+  if (selectedAccount) {
+    fetchResources();
+  } else {
+    setResources([]);
+    setError('Please add an AWS account to get started');
+  }
+}, [selectedCategory, selectedService, selectedAccount, selectedRegion]);
 
-    if (selectedAccount) {
-      fetchResources();
-    } else {
-      setResources([]);
-      setError('Please add an AWS account to get started');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory, selectedService, selectedAccount, selectedRegion, isAuthenticated]);
 
   const fetchRegions = async () => {
     if (!selectedAccount) return;
@@ -300,20 +313,20 @@ const DashboardContent: React.FC = () => {
   }, []);
 
   // Show login page if not authenticated
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (authLoading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+  //         <p className="text-slate-600">Loading...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
-  if (!isAuthenticated) {
-    return <Login />;
-  }
+  // if (!isAuthenticated) {
+  //   return <Login />;
+  // }
 
   return (
     <ErrorBoundary>
