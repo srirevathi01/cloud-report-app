@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Cloud, Moon, Sun } from './icons';
 import { AWSAccount } from '../types';
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 
 interface TopBarProps {
@@ -22,7 +22,10 @@ const TopBar: React.FC<TopBarProps> = ({
   onAccountChange,
   onRegionChange
 }) => {
-  const { user, signOut } = useAuth();
+  // const { user, signOut } = useAuth();
+  const signOut = async () => {};
+  const user = null;
+
   const { isDarkMode, toggleDarkMode } = useDarkMode();
 
   const handleSignOut = async () => {
@@ -142,7 +145,7 @@ const TopBar: React.FC<TopBarProps> = ({
               )}
             </motion.button>
 
-            {/* User Info */}
+            {/* User Info
             <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-xl border border-slate-300 dark:border-slate-600 shadow-md min-w-0 h-[42px]">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +156,13 @@ const TopBar: React.FC<TopBarProps> = ({
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate">{user?.username || 'User'}</div>
                 {user?.email && <div className="text-[10px] text-slate-500 dark:text-slate-400 hidden md:block leading-tight truncate">{user.email}</div>}
               </div>
+            </div> */}
+            <div className="text-left min-w-0 flex-1">
+              <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 leading-tight truncate">
+                User
+              </div>
             </div>
+
 
             {/* Sign Out Button */}
             <button
