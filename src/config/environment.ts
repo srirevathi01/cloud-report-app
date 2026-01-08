@@ -32,7 +32,7 @@ export interface Environment {
  */
 export const environment: Environment = {
   // API Configuration
-  apiBaseUrl: 'https://cloud-report-alb-1341020203.us-east-1.elb.amazonaws.com',
+  apiBaseUrl: 'http://cloud-report-alb-1341020203.us-east-1.elb.amazonaws.com',
   env: 'development',
 
   // AWS Cognito Configuration
@@ -43,6 +43,8 @@ export const environment: Environment = {
     domain: 'us-east-1oatlpbxaz.auth.us-east-1.amazoncognito.com',
     redirectSignIn: 'https://d1fd4y10eleeus.cloudfront.net',
     redirectSignOut: 'https://d1fd4y10eleeus.cloudfront.net',
+    // redirectSignIn: 'http://localhost:3000',
+    // redirectSignOut: 'http://localhost:3000',
     identityProvider: 'IAMSAML',
   },
 
