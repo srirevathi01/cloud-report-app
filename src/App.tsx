@@ -124,6 +124,7 @@ const DashboardContent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAccount]);
 
+  
   // Fetch resources when category, service, account, or region changes (only if authenticated)
   // useEffect(() => {
   //   if (!isAuthenticated) {
