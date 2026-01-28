@@ -32,7 +32,7 @@ export interface Environment {
  */
 export const environment: Environment = {
   // API Configuration
-  apiBaseUrl: 'https://api.cloudapi.knackforge.com:8000',
+  apiBaseUrl: 'https://d3hi7rj8nb3rbs.cloudfront.net',
   env: 'development',
 
   // AWS Cognito Configuration
