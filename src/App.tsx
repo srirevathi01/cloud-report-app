@@ -12,7 +12,7 @@ import TopBar from './components/TopBar';
 import ServiceTabs from './components/ServiceTabs';
 import ResourceTable from './components/ResourceTable';
 import ResourceModal from './components/ResourceModal';
-// import Login from './components/Login';
+import Login from './components/Login';
 import AccountsPage from './components/AccountsPage';
 import AlertModal from './components/AlertModal';
 import { CloudDashboard } from './components/Dashboard';
